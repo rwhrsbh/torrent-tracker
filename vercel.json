@@ -1,0 +1,6 @@
+{
+  "env": {
+    "MONGODB_URI": "@mongodb-uri",
+    "ADMIN_TOKEN": "@admin-token"
+  }
+}
