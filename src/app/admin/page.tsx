@@ -3,86 +3,74 @@
 import { useState } from 'react';
 
 export default function AdminPage() {
-  const [jsonData, setJsonData] = useState('');
   const [jsonUrl, setJsonUrl] = useState('');
   const [adminToken, setAdminToken] = useState('');
   const [status, setStatus] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [uploadMethod, setUploadMethod] = useState<'manual' | 'file' | 'url'>('manual');
+  const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>('file');
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const content = event.target?.result as string;
-        setJsonData(content);
-      };
-      reader.readAsText(file);
-    }
-  };
+    if (!file) return;
 
-  const handleUrlFetch = async () => {
-    if (!jsonUrl) return;
-    
     setIsLoading(true);
-    setStatus('Fetching JSON from URL...');
-    
+    setStatus('Uploading file...');
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('adminToken', adminToken);
+
     try {
-      const response = await fetch(`/api/admin/fetch-json?url=${encodeURIComponent(jsonUrl)}`, {
-        headers: {
-          'Authorization': `Bearer ${adminToken}`,
-        },
+      const response = await fetch('/api/admin/upload-file', {
+        method: 'POST',
+        body: formData,
       });
-      
+
       const result = await response.json();
-      
+
       if (response.ok) {
-        setJsonData(JSON.stringify(result.data, null, 2));
-        setStatus('JSON fetched successfully!');
+        setStatus('File uploaded successfully!');
       } else {
-        setStatus(`Error fetching JSON: ${result.error}`);
+        setStatus(`Error: ${result.error}`);
       }
     } catch (error) {
-      setStatus('Error fetching JSON from URL');
+      setStatus('Error: File upload failed');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUrlSubmit = async () => {
+    if (!jsonUrl) return;
+    
     setIsLoading(true);
-    setStatus('');
-
+    setStatus('Processing URL...');
+    
     try {
-      const parsedData = JSON.parse(jsonData);
-      
-      const response = await fetch('/api/admin/upload', {
+      const response = await fetch('/api/admin/upload-url', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${adminToken}`,
         },
-        body: JSON.stringify(parsedData),
+        body: JSON.stringify({ url: jsonUrl }),
       });
-
+      
       const result = await response.json();
-
+      
       if (response.ok) {
-        setStatus('Upload successful!');
-        if (uploadMethod === 'manual') {
-          setJsonData('');
-        }
+        setStatus('URL processed successfully!');
+        setJsonUrl('');
       } else {
         setStatus(`Error: ${result.error}`);
       }
     } catch (error) {
-      setStatus('Error: Invalid JSON format');
+      setStatus('Error processing URL');
     } finally {
       setIsLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
@@ -94,13 +82,6 @@ export default function AdminPage() {
           
           <div className="mb-6">
             <div className="flex space-x-4 mb-4">
-              <button
-                type="button"
-                onClick={() => setUploadMethod('manual')}
-                className={`px-4 py-2 rounded ${uploadMethod === 'manual' ? 'btn-premium' : 'btn-premium-outline'}`}
-              >
-                Manual Input
-              </button>
               <button
                 type="button"
                 onClick={() => setUploadMethod('file')}
@@ -118,7 +99,7 @@ export default function AdminPage() {
             </div>
           </div>
           
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-6">
             <div>
               <label htmlFor="adminToken" className="block text-sm font-medium mb-2">
                 Admin Token
@@ -150,11 +131,11 @@ export default function AdminPage() {
                   />
                   <button
                     type="button"
-                    onClick={handleUrlFetch}
-                    disabled={isLoading || !jsonUrl}
-                    className="btn-premium-outline disabled:opacity-50"
+                    onClick={handleUrlSubmit}
+                    disabled={isLoading || !jsonUrl || !adminToken}
+                    className="btn-premium disabled:opacity-50"
                   >
-                    Fetch
+                    {isLoading ? 'Processing...' : 'Upload'}
                   </button>
                 </div>
               </div>
@@ -170,33 +151,15 @@ export default function AdminPage() {
                   id="jsonFile"
                   accept=".json"
                   onChange={handleFileUpload}
-                  className="input-premium w-full file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-gray-700 file:text-white hover:file:bg-gray-600"
+                  disabled={!adminToken}
+                  className="input-premium w-full file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-gray-700 file:text-white hover:file:bg-gray-600 disabled:opacity-50"
                 />
+                <p className="text-sm text-gray-400 mt-2">
+                  {!adminToken ? 'Enter admin token first' : 'Select a JSON file to upload'}
+                </p>
               </div>
             )}
-            
-            <div>
-              <label htmlFor="jsonData" className="block text-sm font-medium mb-2">
-                JSON Data
-              </label>
-              <textarea
-                id="jsonData"
-                value={jsonData}
-                onChange={(e) => setJsonData(e.target.value)}
-                className="input-premium w-full h-96 font-mono text-sm"
-                placeholder='{"name":"FitGirl","downloads":[...]}'
-                required
-              />
-            </div>
-            
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="btn-premium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Uploading...' : 'Upload'}
-            </button>
-          </form>
+          </div>
           
           {status && (
             <div className={`mt-4 p-4 rounded ${
@@ -217,6 +180,7 @@ export default function AdminPage() {
   "downloads": [
     {
       "title": "Game Title",
+      "genres": ["Action", "Adventure", "RPG"],
       "uris": ["magnet:?xt=urn:btih:..."],
       "uploadDate": "2025-06-19T11:53:38.000Z",
       "fileSize": "7.9 GB"
@@ -224,6 +188,14 @@ export default function AdminPage() {
   ]
 }`}
           </pre>
+          <div className="mt-4 text-sm text-gray-400">
+            <p><strong>Примечания:</strong></p>
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              <li><code>genres</code> - опциональный массив жанров. Если не указан, будет "Game"</li>
+              <li><code>uploadDate</code> - опциональная дата. Если не указана или невалидна, будет текущая дата</li>
+              <li><code>fileSize</code> - опциональный размер файла. Если не указан, будет "Unknown"</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

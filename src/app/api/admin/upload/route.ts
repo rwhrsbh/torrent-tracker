@@ -24,11 +24,20 @@ export async function POST(request: NextRequest) {
     for (const download of body.downloads) {
       const existingGame = await GameTorrent.findOne({ title: download.title });
       
+      // Parse date safely
+      let uploadDate = new Date();
+      if (download.uploadDate) {
+        const parsedDate = new Date(download.uploadDate);
+        if (!isNaN(parsedDate.getTime())) {
+          uploadDate = parsedDate;
+        }
+      }
+
       const sourceData = {
         name: body.name,
         uris: download.uris,
-        uploadDate: new Date(download.uploadDate),
-        fileSize: download.fileSize,
+        uploadDate: uploadDate,
+        fileSize: download.fileSize || 'Unknown',
       };
 
       if (existingGame) {
@@ -40,10 +49,14 @@ export async function POST(request: NextRequest) {
         }
         await existingGame.save();
       } else {
-        const detectedGenres = detectGenres(download.title);
+        // Используем жанры из JSON если есть, иначе дефолтные
+        const genres = download.genres && Array.isArray(download.genres) && download.genres.length > 0 
+          ? download.genres 
+          : detectGenres(download.title);
+          
         const newGame = new GameTorrent({
           title: download.title,
-          genres: detectedGenres,
+          genres: genres,
           sources: [sourceData],
         });
         await newGame.save();

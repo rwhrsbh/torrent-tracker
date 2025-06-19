@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 
 interface IGameTorrent {
   title: string;
+  cleanTitle?: string;
+  version?: string;
   genres: string[];
   likes: number;
   likedBy: mongoose.Types.ObjectId[];
@@ -21,6 +23,14 @@ const gameTorrentSchema = new mongoose.Schema<IGameTorrent>({
     type: String,
     required: true,
     unique: true,
+  },
+  cleanTitle: {
+    type: String,
+    required: false,
+  },
+  version: {
+    type: String,
+    required: false,
   },
   genres: [{
     type: String,
