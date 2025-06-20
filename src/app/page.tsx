@@ -3,6 +3,10 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import BeeSwarm from '@/components/BeeSwarm';
+import HoneycombBackground from '@/components/HoneycombBackground';
+import BeeCursor from '@/components/BeeCursor';
+import BeehiveBackground from '@/components/BeehiveBackground';
 
 const AdBlockDetector = dynamic(() => import('@/components/AdBlockDetector'), {
   ssr: false
@@ -221,13 +225,19 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-transparent text-white">
+      <BeehiveBackground />
+      <HoneycombBackground />
+      <BeeSwarm />
+      <BeeCursor />
       <AdBlockDetector />
       <DevToolsDetector />
       <header className="border-b border-gray-800 bg-black/90 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-3xl font-bold">Premium Torrent Tracker</h1>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-transparent">
+              🍯 HiveShare - Premium Bee Tracker 🐝
+            </h1>
             
             <div className="flex items-center gap-4">
               {user ? (
@@ -366,7 +376,7 @@ export default function Home() {
                       
                       <div className="flex flex-wrap gap-2 mb-4">
                         {game.genres.map((genre) => (
-                          <span key={genre} className="px-2 py-1 bg-gray-700 text-xs rounded">
+                          <span key={genre} className="genre-tag">
                             {genre}
                           </span>
                         ))}
@@ -375,14 +385,14 @@ export default function Home() {
                       <div className="flex items-center gap-4 mb-4">
                         <div className="flex flex-wrap gap-2">
                           {game.sources.map((source) => (
-                            <span key={source.name} className="px-2 py-1 bg-blue-900 text-xs rounded">
-                              {source.name}
+                            <span key={source.name} className="px-3 py-1 bg-gradient-to-r from-amber-600 to-yellow-600 text-black text-xs rounded-full font-semibold">
+                              📦 {source.name}
                             </span>
                           ))}
                         </div>
                         
-                        <div className="flex items-center gap-2 text-sm text-gray-400">
-                          <span>❤️ {game.likes}</span>
+                        <div className="flex items-center gap-2 text-sm text-yellow-400 like-button">
+                          <span>🍯 {game.likes} Sweet!</span>
                         </div>
                       </div>
                     </div>
@@ -401,7 +411,7 @@ export default function Home() {
                           className="btn-premium-outline text-sm"
                           title={`Download from ${source.name} - ${source.fileSize}`}
                         >
-                          Download ({source.name})
+                          🐝 Buzz & Download ({source.name})
                         </button>
                       ))}
                     </div>

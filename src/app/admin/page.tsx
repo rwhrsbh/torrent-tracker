@@ -1,6 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import BeeSwarm from '@/components/BeeSwarm';
+import HoneycombBackground from '@/components/HoneycombBackground';
+import BeeCursor from '@/components/BeeCursor';
+import BeehiveBackground from '@/components/BeehiveBackground';
 
 export default function AdminPage() {
   const [jsonUrl, setJsonUrl] = useState('');
@@ -132,9 +136,15 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-8">
+    <div className="min-h-screen bg-transparent text-white p-8">
+      <BeehiveBackground />
+      <HoneycombBackground />
+      <BeeSwarm />
+      <BeeCursor />
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Admin Panel</h1>
+        <h1 className="text-3xl font-bold mb-8 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-transparent">
+          🐝 Hive Admin Panel 🍯
+        </h1>
         
         <div className="card-premium">
           <h2 className="text-xl font-semibold mb-6">Upload Torrent Data</h2>
@@ -251,9 +261,9 @@ export default function AdminPage() {
                         <span>Progress: {progressInfo.current}/{progressInfo.total}</span>
                         <span>{Math.round((progressInfo.current / progressInfo.total) * 100)}%</span>
                       </div>
-                      <div className="w-full bg-gray-700 rounded-full h-2 mt-1">
+                      <div className="progress-honey h-3 mt-1">
                         <div 
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          className="progress-honey-fill h-full transition-all duration-300"
                           style={{ width: `${(progressInfo.current / progressInfo.total) * 100}%` }}
                         ></div>
                       </div>

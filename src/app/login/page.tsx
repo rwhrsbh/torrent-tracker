@@ -3,6 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import BeeSwarm from '@/components/BeeSwarm';
+import HoneycombBackground from '@/components/HoneycombBackground';
+import BeeCursor from '@/components/BeeCursor';
+import BeehiveBackground from '@/components/BeehiveBackground';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -53,13 +57,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-transparent text-white flex items-center justify-center p-4">
+      <BeehiveBackground />
+      <HoneycombBackground />
+      <BeeSwarm />
+      <BeeCursor />
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold hover:text-gray-300">
-            Premium Torrent Tracker
+          <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-transparent hover:from-yellow-300 hover:via-yellow-400 hover:to-yellow-500">
+            🍯 HiveShare - Premium Bee Tracker 🐝
           </Link>
-          <h1 className="text-3xl font-bold mt-4">Sign In</h1>
+          <h1 className="text-3xl font-bold mt-4 bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">🐝 Sign Into the Hive</h1>
         </div>
 
         <div className="card-premium">
@@ -101,7 +109,7 @@ export default function LoginPage() {
               disabled={isLoading}
               className="btn-premium w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Signing In...' : 'Sign In'}
+              {isLoading ? '🐝 Buzzing Into Hive...' : '🍯 Enter the Hive'}
             </button>
           </form>
 
@@ -117,9 +125,9 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center">
             <p className="text-gray-400">
-              Don't have an account?{' '}
-              <Link href="/register" className="text-white hover:text-gray-300 font-medium">
-                Create Account
+              Not part of the swarm yet?{' '}
+              <Link href="/register" className="text-yellow-400 hover:text-yellow-300 font-medium">
+                🐝 Join the Hive
               </Link>
             </p>
           </div>

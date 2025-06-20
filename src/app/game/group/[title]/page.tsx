@@ -3,6 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import BeeSwarm from '@/components/BeeSwarm';
+import HoneycombBackground from '@/components/HoneycombBackground';
+import BeeCursor from '@/components/BeeCursor';
+import BeehiveBackground from '@/components/BeehiveBackground';
 
 interface Source {
   name: string;
@@ -191,11 +195,15 @@ export default function GroupedGamePage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <header className="border-b border-gray-800 bg-black/90 backdrop-blur-sm">
+    <div className="min-h-screen bg-transparent text-white">
+      <BeehiveBackground />
+      <HoneycombBackground />
+      <BeeSwarm />
+      <BeeCursor />
+      <header className="header-premium">
         <div className="max-w-4xl mx-auto px-4 py-6">
-          <Link href="/" className="text-lg font-medium hover:text-gray-300 mb-4 inline-block">
-            ← Back to Torrents
+          <Link href="/" className="text-lg font-medium hover:text-yellow-400 mb-4 inline-block transition-colors duration-300">
+            🏠 ← Back to the Hive
           </Link>
         </div>
       </header>
@@ -211,7 +219,7 @@ export default function GroupedGamePage() {
           
           <div className="flex flex-wrap gap-2 mb-4">
             {game.genres.map((genre) => (
-              <span key={genre} className="px-3 py-1 bg-gray-700 text-sm rounded">
+              <span key={genre} className="genre-tag">
                 {genre}
               </span>
             ))}
@@ -220,13 +228,13 @@ export default function GroupedGamePage() {
           <div className="flex items-center gap-4 mb-6">
             <button
               onClick={handleLike}
-              className={`flex items-center gap-2 px-4 py-2 rounded ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg like-button transition-all duration-300 ${
                 user && game.likedBy.includes(user.id)
-                  ? 'bg-red-600 hover:bg-red-700'
-                  : 'bg-gray-700 hover:bg-gray-600'
+                  ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black'
+                  : 'bg-gray-700 hover:bg-gradient-to-r hover:from-yellow-400 hover:to-yellow-600 hover:text-black'
               }`}
             >
-              ❤️ {game.totalLikes} Likes
+              🍯 {game.totalLikes} Sweet Likes!
             </button>
             
             <div className="text-gray-400 text-sm">
@@ -263,7 +271,7 @@ export default function GroupedGamePage() {
                     onClick={() => openTorrentLink(source.uris)}
                     className="btn-premium-outline"
                   >
-                    Download
+                    🐝 Buzz & Download
                   </button>
                 </div>
               </div>

@@ -1,0 +1,232 @@
+/* Пчелиная тематика для торрент-трекера */
+
+:root {
+  /* Пчелиная цветовая палитра */
+  --honey-gold: #FFD700;
+  --honey-amber: #FFBF00;
+  --honey-dark: #B8860B;
+  --bee-yellow: #FFF200;
+  --bee-black: #1A1A1A;
+  --bee-brown: #8B4513;
+  --honeycomb-bg: #2A2A2A;
+  --wax-white: #FFF8DC;
+  --pollen-orange: #FF8C00;
+  
+  /* Градиенты */
+  --honey-gradient: linear-gradient(135deg, var(--honey-gold) 0%, var(--honey-amber) 50%, var(--honey-dark) 100%);
+  --honeycomb-gradient: linear-gradient(60deg, var(--honey-gold) 25%, transparent 25%, transparent 75%, var(--honey-gold) 75%), 
+                        linear-gradient(120deg, var(--honey-gold) 25%, transparent 25%, transparent 75%, var(--honey-gold) 75%);
+}
+
+/* Фон с пчелиными сотами */
+body {
+  background-color: rgba(26, 26, 26, 0.6);
+  background-image: 
+    radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
+    linear-gradient(60deg, rgba(255, 215, 0, 0.05) 25%, transparent 25%, transparent 75%, rgba(255, 215, 0, 0.05) 75%), 
+    linear-gradient(120deg, rgba(255, 215, 0, 0.05) 25%, transparent 25%, transparent 75%, rgba(255, 215, 0, 0.05) 75%);
+  background-size: 100px 100px, 60px 60px, 60px 60px;
+  background-position: 0 0, 0 0, 30px 30px;
+  color: var(--wax-white);
+  font-family: 'Inter', sans-serif;
+}
+
+/* Анимация пчелиных сот */
+@keyframes honeycomb-pulse {
+  0%, 100% { 
+    opacity: 0.05;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.15;
+    transform: scale(1.02);
+  }
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(60deg, rgba(255, 215, 0, 0.03) 25%, transparent 25%, transparent 75%, rgba(255, 215, 0, 0.03) 75%), 
+    linear-gradient(120deg, rgba(255, 215, 0, 0.03) 25%, transparent 25%, transparent 75%, rgba(255, 215, 0, 0.03) 75%);
+  background-size: 80px 80px, 80px 80px;
+  background-position: 0 0, 40px 40px;
+  animation: honeycomb-pulse 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Стилизация карточек под соты */
+.card-premium {
+  background: rgba(42, 42, 42, 0.7);
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  border-radius: 16px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Убираем тяжелый псевдо-элемент с анимациями */
+
+.card-premium:hover {
+  border-color: var(--honey-gold);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+/* Кнопки в стиле пчелиных сот */
+.btn-premium {
+  background: var(--honey-gradient);
+  color: var(--bee-black);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: box-shadow 0.2s ease;
+}
+
+.btn-premium:hover {
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+}
+
+.btn-premium-outline {
+  background: transparent;
+  color: var(--honey-gold);
+  border: 2px solid var(--honey-gold);
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.btn-premium-outline:hover {
+  background: var(--honey-gradient);
+  color: var(--bee-black);
+}
+
+/* Инпуты в пчелином стиле */
+.input-premium {
+  background: rgba(42, 42, 42, 0.6);
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: var(--wax-white);
+  transition: all 0.3s ease;
+}
+
+.input-premium:focus {
+  outline: none;
+  border-color: var(--honey-gold);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  background: rgba(42, 42, 42, 0.9);
+}
+
+.input-premium::placeholder {
+  color: rgba(255, 248, 220, 0.5);
+}
+
+/* Анимация жужжания */
+@keyframes buzz {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(1px) rotate(1deg); }
+  50% { transform: translateX(-1px) rotate(-1deg); }
+  75% { transform: translateX(1px) rotate(1deg); }
+}
+
+/* Пчелиные жанры */
+.genre-tag {
+  background: linear-gradient(45deg, var(--honey-amber), var(--honey-gold));
+  color: var(--bee-black);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+  margin: 2px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.genre-tag:hover {
+  animation: buzz 0.5s ease-in-out;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.6);
+}
+
+/* Стилизация хедера */
+.header-premium {
+  background: rgba(26, 26, 26, 0.9);
+  border-bottom: 3px solid var(--honey-gold);
+  position: relative;
+}
+
+/* Прогресс-бар в виде наполнения медом */
+.progress-honey {
+  background: rgba(42, 42, 42, 0.8);
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  border: 2px solid rgba(255, 215, 0, 0.3);
+}
+
+.progress-honey-fill {
+  background: var(--honey-gradient);
+  height: 100%;
+  border-radius: 18px;
+  transition: width 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-honey-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.3) 2px, transparent 2px),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.2) 1px, transparent 1px);
+  background-size: 20px 20px, 15px 15px;
+  animation: honey-flow 3s linear infinite;
+}
+
+@keyframes honey-flow {
+  0% { background-position: 0 0, 0 0; }
+  100% { background-position: 20px 20px, 15px 15px; }
+}
+
+/* Пульсация для лайков */
+.like-button {
+  color: var(--honey-gold);
+  transition: all 0.3s ease;
+}
+
+.like-button:hover {
+  animation: buzz 0.6s ease-in-out;
+  text-shadow: 0 0 10px var(--honey-gold);
+}
+
+/* Скроллбар в пчелином стиле */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bee-black);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--honey-gradient);
+  border-radius: 6px;
+  border: 2px solid var(--bee-black);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, var(--honey-amber) 0%, var(--honey-gold) 100%);
+}

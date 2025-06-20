@@ -265,7 +265,8 @@ ${titles.map((title, index) => `${index + 1}. ${title}`).join('\n')}`;
       console.log(`Retrying chunk processing (attempt ${retryCount + 2}/${maxRetries + 1})...`);
       
       // Если это ошибка 429 или "No response", ждем дольше
-      const isRateLimitError = error.message?.includes('429') || error.message?.includes('No response');
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isRateLimitError = errorMessage.includes('429') || errorMessage.includes('No response');
       const waitTime = isRateLimitError ? 15000 : 5000; // 15 секунд для rate limit, 5 для других ошибок
       
       console.log(`Waiting ${waitTime / 1000} seconds before retry...`);
