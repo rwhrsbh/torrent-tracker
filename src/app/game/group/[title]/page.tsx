@@ -9,19 +9,22 @@ interface Source {
   uris: string[];
   uploadDate: string;
   fileSize: string;
+  gameVersion?: string;
+  originalTitle?: string;
 }
 
-interface GameTorrent {
+interface GroupedGame {
   _id: string;
   title: string;
   cleanTitle?: string;
   version?: string;
   genres: string[];
-  likes: number;
+  totalLikes: number;
   likedBy: string[];
   sources: Source[];
   createdAt: string;
   updatedAt: string;
+  games: any[];
 }
 
 interface Comment {
@@ -41,10 +44,10 @@ interface User {
   isAdmin: boolean;
 }
 
-export default function GamePage() {
+export default function GroupedGamePage() {
   const params = useParams();
   const router = useRouter();
-  const [game, setGame] = useState<GameTorrent | null>(null);
+  const [game, setGame] = useState<GroupedGame | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
@@ -59,11 +62,11 @@ export default function GamePage() {
     
     fetchGame();
     fetchComments();
-  }, [params.id]);
+  }, [params.title]);
 
   const fetchGame = async () => {
     try {
-      const response = await fetch(`/api/game/${params.id}`);
+      const response = await fetch(`/api/game/group/${params.title}`);
       if (response.ok) {
         const data = await response.json();
         setGame(data);
@@ -71,7 +74,7 @@ export default function GamePage() {
         router.push('/');
       }
     } catch (error) {
-      console.error('Error fetching game:', error);
+      console.error('Error fetching grouped game:', error);
       router.push('/');
     } finally {
       setLoading(false);
@@ -80,7 +83,7 @@ export default function GamePage() {
 
   const fetchComments = async () => {
     try {
-      const response = await fetch(`/api/game/${params.id}/comments`);
+      const response = await fetch(`/api/game/group/${params.title}/comments`);
       if (response.ok) {
         const data = await response.json();
         setComments(data);
@@ -96,18 +99,22 @@ export default function GamePage() {
       return;
     }
 
-    try {
-      const response = await fetch(`/api/game/${params.id}/like`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+    // For now, we'll use the first game's ID for likes
+    // In a full implementation, you might want to handle likes differently for grouped games
+    if (game && game.games.length > 0) {
+      try {
+        const response = await fetch(`/api/game/${game.games[0]._id}/like`, {
+          method: 'POST',
+          credentials: 'include',
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        setGame(prev => prev ? { ...prev, likes: data.likes, likedBy: data.likedBy } : null);
+        if (response.ok) {
+          const data = await response.json();
+          setGame(prev => prev ? { ...prev, totalLikes: data.likes, likedBy: data.likedBy } : null);
+        }
+      } catch (error) {
+        console.error('Error liking game:', error);
       }
-    } catch (error) {
-      console.error('Error liking game:', error);
     }
   };
 
@@ -123,7 +130,7 @@ export default function GamePage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`/api/game/${params.id}/comments`, {
+      const response = await fetch(`/api/game/group/${params.title}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -209,24 +216,38 @@ export default function GamePage() {
                   : 'bg-gray-700 hover:bg-gray-600'
               }`}
             >
-              ❤️ {game.likes} Likes
+              ❤️ {game.totalLikes} Likes
             </button>
             
             <div className="text-gray-400 text-sm">
               Added {formatDate(game.createdAt)}
             </div>
+            
+            <div className="text-gray-400 text-sm">
+              {game.games.length} version{game.games.length !== 1 ? 's' : ''} available
+            </div>
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-xl font-semibold">Download Sources</h3>
+            <h3 className="text-xl font-semibold">Download Sources ({game.sources.length})</h3>
             {game.sources.map((source, index) => (
               <div key={index} className="bg-gray-800 rounded-lg p-4">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                   <div>
-                    <div className="font-medium text-lg mb-2">{source.name}</div>
+                    <div className="font-medium text-lg mb-2">
+                      {source.name}
+                      {source.gameVersion && (
+                        <span className="text-gray-400 ml-2">({source.gameVersion})</span>
+                      )}
+                    </div>
                     <div className="text-sm text-gray-400">
                       Size: {source.fileSize} | Upload: {formatDate(source.uploadDate)}
                     </div>
+                    {source.originalTitle && source.originalTitle !== (game.cleanTitle || game.title) && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        Original: {source.originalTitle}
+                      </div>
+                    )}
                   </div>
                   <button
                     onClick={() => openTorrentLink(source.uris)}

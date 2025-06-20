@@ -22,6 +22,8 @@ interface Source {
 interface GameTorrent {
   _id: string;
   title: string;
+  cleanTitle?: string;
+  version?: string;
   genres: string[];
   likes: number;
   likedBy: string[];
@@ -43,6 +45,8 @@ interface GenreOption {
 interface SearchSuggestion {
   _id: string;
   title: string;
+  cleanTitle?: string;
+  version?: string;
   genres: string[];
 }
 
@@ -68,11 +72,19 @@ export default function Home() {
   const [pendingMagnetLinks, setPendingMagnetLinks] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
+  const [showAllGenres, setShowAllGenres] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     fetchGames();
     fetchSources();
     fetchGenres();
+    
+    // Check if user is logged in
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
   }, []);
 
   useEffect(() => {
@@ -147,9 +159,10 @@ export default function Home() {
   };
 
   const handleSuggestionClick = (game: SearchSuggestion) => {
-    setSearchTerm(game.title);
     setShowSuggestions(false);
-    // Navigate to the specific game - you could implement smooth scrolling here
+    setSearchTerm('');
+    const gameTitle = encodeURIComponent(game.cleanTitle || game.title);
+    window.location.href = `/game/group/${gameTitle}`;
   };
 
   const toggleSource = (sourceName: string) => {
@@ -179,19 +192,14 @@ export default function Home() {
     }
   };
 
-  const displayedGames = searchTerm.length >= 2 && searchSuggestions.length > 0
-    ? searchSuggestions.map(suggestion => {
-        const fullGame = games.find(g => g._id === suggestion._id);
-        return fullGame || {
-          _id: suggestion._id,
-          title: suggestion.title,
-          genres: suggestion.genres,
-          sources: [],
-          createdAt: '',
-          updatedAt: ''
-        };
-      }).filter(game => game.sources.length > 0)
-    : games;
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    setUser(null);
+    window.location.reload();
+  };
+
+  const displayedGames = games;
 
 
   if (loading) {
@@ -208,7 +216,32 @@ export default function Home() {
       <DevToolsDetector />
       <header className="border-b border-gray-800 bg-black/90 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold mb-4">Premium Torrent Tracker</h1>
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-3xl font-bold">Premium Torrent Tracker</h1>
+            
+            <div className="flex items-center gap-4">
+              {user ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-gray-300">Welcome, {user.username}</span>
+                  <button
+                    onClick={handleLogout}
+                    className="btn-premium-outline text-sm"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Link href="/login" className="btn-premium-outline text-sm">
+                    Login
+                  </Link>
+                  <Link href="/register" className="btn-premium text-sm">
+                    Register
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
           
           <div className="flex flex-col lg:flex-row gap-4 mb-4">
             <div className="relative flex-1 max-w-md">
@@ -230,7 +263,12 @@ export default function Home() {
                       onClick={() => handleSuggestionClick(suggestion)}
                       className="px-4 py-2 hover:bg-gray-700 cursor-pointer border-b border-gray-700 last:border-b-0"
                     >
-                      <div className="font-medium">{suggestion.title}</div>
+                      <div className="font-medium">
+                        {suggestion.cleanTitle || suggestion.title}
+                        {suggestion.version && (
+                          <span className="text-gray-400 ml-2">({suggestion.version})</span>
+                        )}
+                      </div>
                       {suggestion.genres.length > 0 && (
                         <div className="text-xs text-gray-400 mt-1">
                           {suggestion.genres.join(', ')}
@@ -264,9 +302,19 @@ export default function Home() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Genres</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium">Genres</label>
+                {availableGenres.length > 10 && (
+                  <button
+                    onClick={() => setShowAllGenres(!showAllGenres)}
+                    className="text-sm text-gray-400 hover:text-white"
+                  >
+                    {showAllGenres ? 'Show Less' : `Show All (${availableGenres.length})`}
+                  </button>
+                )}
+              </div>
               <div className="flex flex-wrap gap-2">
-                {availableGenres.slice(0, 10).map((genre) => (
+                {(showAllGenres ? availableGenres : availableGenres.slice(0, 10)).map((genre) => (
                   <button
                     key={genre.name}
                     onClick={() => toggleGenre(genre.name)}
@@ -297,8 +345,13 @@ export default function Home() {
                 <div key={game._id} className="card-premium">
                   <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                     <div className="flex-1">
-                      <Link href={`/game/${game._id}`} className="hover:text-gray-300">
-                        <h2 className="text-2xl font-semibold mb-2">{game.title}</h2>
+                      <Link href={`/game/group/${encodeURIComponent(game.cleanTitle || game.title)}`} className="hover:text-gray-300">
+                        <h2 className="text-2xl font-semibold mb-2">
+                          {game.cleanTitle || game.title}
+                          {game.version && (
+                            <span className="text-lg text-gray-400 ml-2">({game.version})</span>
+                          )}
+                        </h2>
                       </Link>
                       
                       <div className="flex flex-wrap gap-2 mb-4">
@@ -326,7 +379,7 @@ export default function Home() {
                     
                     <div className="flex flex-col gap-2">
                       <Link 
-                        href={`/game/${game._id}`}
+                        href={`/game/group/${encodeURIComponent(game.cleanTitle || game.title)}`}
                         className="btn-premium-outline text-sm text-center"
                       >
                         View Details

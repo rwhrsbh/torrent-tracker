@@ -23,19 +23,72 @@ export async function GET(request: NextRequest) {
       query.genres = { $in: genres };
     }
     
-    const [games, total] = await Promise.all([
-      GameTorrent.find(query)
-        .sort({ updatedAt: -1 })
-        .skip(skip)
-        .limit(limit),
-      GameTorrent.countDocuments(query)
+    // Build aggregation pipeline for grouping by cleanTitle
+    const pipeline = [
+      { $match: query },
+      {
+        $group: {
+          _id: { $ifNull: ['$cleanTitle', '$title'] },
+          games: { $push: '$$ROOT' },
+          totalLikes: { $sum: '$likes' },
+          allSources: { $push: '$sources' },
+          genres: { $first: '$genres' },
+          cleanTitle: { $first: '$cleanTitle' },
+          title: { $first: '$title' },
+          version: { $first: '$version' },
+          createdAt: { $min: '$createdAt' },
+          updatedAt: { $max: '$updatedAt' },
+          likedBy: { $push: '$likedBy' }
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          cleanTitle: 1,
+          title: 1,
+          version: 1,
+          genres: 1,
+          likes: '$totalLikes',
+          createdAt: 1,
+          updatedAt: 1,
+          likedBy: {
+            $reduce: {
+              input: '$likedBy',
+              initialValue: [],
+              in: { $setUnion: ['$$value', '$$this'] }
+            }
+          },
+          sources: {
+            $reduce: {
+              input: '$allSources',
+              initialValue: [],
+              in: { $concatArrays: ['$$value', '$$this'] }
+            }
+          }
+        }
+      },
+      { $sort: { updatedAt: -1 } }
+    ];
+
+    const [games, totalResult] = await Promise.all([
+      GameTorrent.aggregate([
+        ...pipeline,
+        { $skip: skip },
+        { $limit: limit }
+      ]),
+      GameTorrent.aggregate([
+        ...pipeline,
+        { $count: 'total' }
+      ])
     ]);
+
+    const total = totalResult.length > 0 ? totalResult[0].total : 0;
     
     let filteredGames = games;
     if (sources && sources.length > 0) {
       filteredGames = games.map(game => ({
-        ...game.toObject(),
-        sources: game.sources.filter(source => sources.includes(source.name))
+        ...game,
+        sources: game.sources.filter((source: any) => sources.includes(source.name))
       }));
     }
     
