@@ -9,6 +9,12 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [uploadMethod, setUploadMethod] = useState<'file' | 'url' | 'auto'>('file');
   const [autoFetchResults, setAutoFetchResults] = useState<any>(null);
+  const [progressInfo, setProgressInfo] = useState<{
+    current: number;
+    total: number;
+    currentSource: string;
+    phase: string;
+  } | null>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -72,12 +78,32 @@ export default function AdminPage() {
     }
   };
 
+  const pollProgress = async () => {
+    try {
+      const response = await fetch(`/api/admin/auto-fetch-progress?token=${encodeURIComponent(adminToken)}`);
+      if (response.ok) {
+        const progress = await response.json();
+        setProgressInfo(progress);
+        
+        if (progress.isRunning) {
+          setTimeout(pollProgress, 2000); // Poll every 2 seconds
+        }
+      }
+    } catch (error) {
+      console.error('Error polling progress:', error);
+    }
+  };
+
   const handleAutoFetch = async () => {
     if (!adminToken) return;
     
     setIsLoading(true);
     setStatus('Starting auto-fetch from Hydra Wiki...');
     setAutoFetchResults(null);
+    setProgressInfo(null);
+    
+    // Start polling for progress
+    setTimeout(pollProgress, 1000);
     
     try {
       const response = await fetch('/api/admin/auto-fetch', {
@@ -101,6 +127,7 @@ export default function AdminPage() {
       setStatus('Error: Auto-fetch failed');
     } finally {
       setIsLoading(false);
+      setProgressInfo(null);
     }
   };
 
@@ -216,6 +243,30 @@ export default function AdminPage() {
                 >
                   {isLoading ? 'Fetching from Hydra Wiki...' : 'Start Auto-Fetch'}
                 </button>
+                
+                {progressInfo && progressInfo.isRunning && (
+                  <div className="mt-4 p-4 bg-gray-800 rounded">
+                    <div className="mb-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Progress: {progressInfo.current}/{progressInfo.total}</span>
+                        <span>{Math.round((progressInfo.current / progressInfo.total) * 100)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-700 rounded-full h-2 mt-1">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${(progressInfo.current / progressInfo.total) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-300">
+                      <div><strong>Current:</strong> {progressInfo.currentSource}</div>
+                      <div><strong>Phase:</strong> {progressInfo.phase}</div>
+                      {progressInfo.startTime && (
+                        <div><strong>Running for:</strong> {Math.round((Date.now() - progressInfo.startTime) / 1000)}s</div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

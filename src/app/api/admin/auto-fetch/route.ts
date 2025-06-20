@@ -4,6 +4,7 @@ import GameTorrent from '@/models/Torrent';
 import Source from '@/models/Source';
 import { detectGenresWithAI } from '@/lib/genreDetector';
 import jwt from 'jsonwebtoken';
+import { updateProgressState, resetProgressState } from '../auto-fetch-progress/route';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,9 +23,21 @@ export async function POST(request: NextRequest) {
 
     console.log('Starting auto-fetch from Hydra Wiki...');
 
+    // Initialize progress
+    resetProgressState();
+    updateProgressState({
+      isRunning: true,
+      current: 0,
+      total: 0,
+      currentSource: 'Fetching source list...',
+      phase: 'Initializing',
+      startTime: Date.now()
+    });
+
     // Fetch resources from Hydra Wiki
     const resourcesResponse = await fetch('https://library.hydra.wiki/data/resources.json');
     if (!resourcesResponse.ok) {
+      resetProgressState();
       throw new Error(`Failed to fetch resources: ${resourcesResponse.status}`);
     }
 
@@ -32,6 +45,11 @@ export async function POST(request: NextRequest) {
     const sources = resourcesData.sources;
 
     console.log(`Found ${sources.length} sources to process`);
+    
+    updateProgressState({
+      total: sources.length,
+      phase: 'Processing sources'
+    });
 
     let processedSources = 0;
     let skippedSources = 0;
@@ -41,6 +59,12 @@ export async function POST(request: NextRequest) {
     for (const sourceInfo of sources) {
       try {
         console.log(`Processing source: ${sourceInfo.title}`);
+        
+        updateProgressState({
+          current: processedSources + skippedSources,
+          currentSource: sourceInfo.title,
+          phase: 'Checking source...'
+        });
 
         // Check if we already have this source and if game count changed
         const existingSource = await Source.findOne({ title: sourceInfo.title });
@@ -55,6 +79,12 @@ export async function POST(request: NextRequest) {
             reason: 'No new games',
             gameCount: currentGameCount
           });
+          
+          updateProgressState({
+            current: processedSources + skippedSources,
+            phase: 'Skipped (no changes)'
+          });
+          
           continue;
         }
 
@@ -109,6 +139,10 @@ export async function POST(request: NextRequest) {
         }
 
         console.log(`Processing ${games.length} games from ${sourceInfo.title}`);
+
+        updateProgressState({
+          phase: `Processing ${games.length} games...`
+        });
 
         // Get source name from the fetched data (like "FitGirl", "DODI", etc.)
         const sourceName = gamesData.name || sourceInfo.title;
@@ -231,6 +265,11 @@ export async function POST(request: NextRequest) {
           gamesAdded: gamesAdded
         });
 
+        updateProgressState({
+          current: processedSources + skippedSources,
+          phase: `Completed: +${gamesAdded} games`
+        });
+
         console.log(`Completed ${sourceInfo.title}: ${gamesAdded} games added`);
 
       } catch (sourceError) {
@@ -245,6 +284,12 @@ export async function POST(request: NextRequest) {
 
     console.log(`Auto-fetch completed: ${processedSources} processed, ${skippedSources} skipped, ${totalGamesAdded} total games added`);
 
+    updateProgressState({
+      current: sources.length,
+      phase: 'Completed!',
+      isRunning: false
+    });
+
     return NextResponse.json({
       success: true,
       summary: {
@@ -258,6 +303,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Auto-fetch error:', error);
+    resetProgressState();
     return NextResponse.json({ 
       error: 'Auto-fetch failed', 
       details: error.message 

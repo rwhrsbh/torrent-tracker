@@ -97,8 +97,9 @@ export async function detectGenresWithAI(titles: string[]): Promise<{ [title: st
   return allResults;
 }
 
-// Функция для обработки одного чанка
-async function processGenresChunk(titles: string[]): Promise<{ [title: string]: { genres: string[], cleanTitle?: string, version?: string } }> {
+// Функция для обработки одного чанка с retry механизмом
+async function processGenresChunk(titles: string[], retryCount = 0): Promise<{ [title: string]: { genres: string[], cleanTitle?: string, version?: string } }> {
+  const maxRetries = 2; // Максимум 3 попытки (0, 1, 2)
   const prompt = `Проанализируй следующие названия игр. Очисти их от лишних меток (языки, репаки, размеры файлов, DLC информация) но СОХРАНИ информацию о версии/билде. Определи жанры. Для каждой игры верни 1-3 наиболее подходящих жанра из списка: Action, Adventure, RPG, Strategy, Simulation, Racing, Sports, Puzzle, Horror, Platformer, Survival, Indie, Multiplayer, Sandbox, Open World, Shooter, Fighting, MMORPG, Card Game, Educational, Stealth, Tower Defense, Battle Royale, Real-time Strategy, Turn-based Strategy.
 
 ОЧЕНЬ ВАЖНО: Формат ответа должен быть строго валидным JSON без дополнительного текста, комментариев или символов. Для каждой игры укажи:
@@ -126,10 +127,10 @@ async function processGenresChunk(titles: string[]): Promise<{ [title: string]: 
 Названия игр для обработки:
 ${titles.map((title, index) => `${index + 1}. ${title}`).join('\n')}`;
 
-  // Создаем маппинг оригинальных названий
-  const originalTitles = [...titles];
+  // Создаем маппинг оригинальных названий (удалена неиспользуемая переменная)
 
-  const requestBody = {
+  try {
+    const requestBody = {
     contents: [
       {
         role: "user",
@@ -164,17 +165,22 @@ ${titles.map((title, index) => `${index + 1}. ${title}`).join('\n')}`;
     if (response.status === 429) {
       console.log('Rate limit exceeded (429), waiting 70 seconds...');
       await new Promise(resolve => setTimeout(resolve, 70000)); // Ждем 70 секунд
-      return processGenresChunk(titles); // Повторяем запрос
+      return processGenresChunk(titles, retryCount); // Повторяем запрос с тем же счетчиком retry
     }
-    throw new Error(`Gemini API error: ${response.status}`);
+    throw new Error(`Gemini API error: ${response.status} - ${response.statusText}`);
   }
 
   const data = await response.json();
+  console.log('Gemini API response structure:', JSON.stringify(data, null, 2));
+  
   const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
   if (!aiResponse) {
+    console.error('No AI response found in data:', data);
     throw new Error('No response from Gemini API');
   }
+  
+  console.log('Raw AI response length:', aiResponse.length);
 
   // Более тщательная очистка JSON ответа
   let cleanedResponse = aiResponse.trim();
@@ -250,6 +256,31 @@ ${titles.map((title, index) => `${index + 1}. ${title}`).join('\n')}`;
   });
 
   return result;
+  
+  } catch (error) {
+    console.error(`Error in processGenresChunk (attempt ${retryCount + 1}):`, error);
+    
+    // Если это не последняя попытка, пробуем еще раз
+    if (retryCount < maxRetries) {
+      console.log(`Retrying chunk processing (attempt ${retryCount + 2}/${maxRetries + 1})...`);
+      
+      // Если это ошибка 429 или "No response", ждем дольше
+      const isRateLimitError = error.message?.includes('429') || error.message?.includes('No response');
+      const waitTime = isRateLimitError ? 15000 : 5000; // 15 секунд для rate limit, 5 для других ошибок
+      
+      console.log(`Waiting ${waitTime / 1000} seconds before retry...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      return processGenresChunk(titles, retryCount + 1);
+    }
+    
+    // Если все попытки неудачны, возвращаем fallback результат
+    console.log(`All retry attempts failed for chunk, using fallback genres`);
+    const fallbackResult: { [title: string]: { genres: string[], cleanTitle?: string, version?: string } } = {};
+    titles.forEach(title => {
+      fallbackResult[title] = { genres: ['Game'] };
+    });
+    return fallbackResult;
+  }
 }
 
 // Обычная функция для одной игры (fallback)
