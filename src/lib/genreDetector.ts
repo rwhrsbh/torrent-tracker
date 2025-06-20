@@ -65,10 +65,10 @@ export async function detectGenresWithAI(titles: string[]): Promise<{ [title: st
     return result;
   }
 
-  const CHUNK_SIZE = 150; // Уменьшили размер чанка для снижения нагрузки
+  const CHUNK_SIZE = 200; // Уменьшили размер чанка для снижения нагрузки
   const allResults: { [title: string]: { genres: string[], cleanTitle?: string, version?: string } } = {};
 
-  // Разбиваем на чанки по 150 игр
+  // Разбиваем на чанки по 200 игр
   for (let i = 0; i < titles.length; i += CHUNK_SIZE) {
     const chunk = titles.slice(i, i + CHUNK_SIZE);
     console.log(`Processing chunk ${Math.floor(i / CHUNK_SIZE) + 1}/${Math.ceil(titles.length / CHUNK_SIZE)} (${chunk.length} games)`);
