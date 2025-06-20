@@ -7,7 +7,8 @@ export default function AdminPage() {
   const [adminToken, setAdminToken] = useState('');
   const [status, setStatus] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>('file');
+  const [uploadMethod, setUploadMethod] = useState<'file' | 'url' | 'auto'>('file');
+  const [autoFetchResults, setAutoFetchResults] = useState<any>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -71,6 +72,37 @@ export default function AdminPage() {
     }
   };
 
+  const handleAutoFetch = async () => {
+    if (!adminToken) return;
+    
+    setIsLoading(true);
+    setStatus('Starting auto-fetch from Hydra Wiki...');
+    setAutoFetchResults(null);
+    
+    try {
+      const response = await fetch('/api/admin/auto-fetch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ adminToken }),
+        credentials: 'include',
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        setStatus('Auto-fetch completed successfully!');
+        setAutoFetchResults(result);
+      } else {
+        setStatus(`Error: ${result.error}`);
+      }
+    } catch (error) {
+      setStatus('Error: Auto-fetch failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
@@ -95,6 +127,13 @@ export default function AdminPage() {
                 className={`px-4 py-2 rounded ${uploadMethod === 'url' ? 'btn-premium' : 'btn-premium-outline'}`}
               >
                 From URL
+              </button>
+              <button
+                type="button"
+                onClick={() => setUploadMethod('auto')}
+                className={`px-4 py-2 rounded ${uploadMethod === 'auto' ? 'btn-premium' : 'btn-premium-outline'}`}
+              >
+                Auto-Fetch (Hydra Wiki)
               </button>
             </div>
           </div>
@@ -159,6 +198,26 @@ export default function AdminPage() {
                 </p>
               </div>
             )}
+
+            {uploadMethod === 'auto' && (
+              <div>
+                <div className="bg-gray-800 p-4 rounded mb-4">
+                  <h3 className="font-medium mb-2">Auto-Fetch from Hydra Wiki</h3>
+                  <p className="text-sm text-gray-400 mb-4">
+                    This will automatically fetch all sources from library.hydra.wiki and update your database. 
+                    Sources with unchanged game counts will be skipped to save time.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAutoFetch}
+                  disabled={isLoading || !adminToken}
+                  className="btn-premium disabled:opacity-50 w-full"
+                >
+                  {isLoading ? 'Fetching from Hydra Wiki...' : 'Start Auto-Fetch'}
+                </button>
+              </div>
+            )}
           </div>
           
           {status && (
@@ -168,6 +227,66 @@ export default function AdminPage() {
                 : 'bg-green-900 border border-green-700'
             }`}>
               {status}
+            </div>
+          )}
+
+          {autoFetchResults && (
+            <div className="mt-6 bg-gray-800 p-4 rounded">
+              <h3 className="font-medium mb-3">Auto-Fetch Results</h3>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-400">{autoFetchResults.summary.totalSources}</div>
+                  <div className="text-sm text-gray-400">Total Sources</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-400">{autoFetchResults.summary.processedSources}</div>
+                  <div className="text-sm text-gray-400">Processed</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-yellow-400">{autoFetchResults.summary.skippedSources}</div>
+                  <div className="text-sm text-gray-400">Skipped</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-400">{autoFetchResults.summary.totalGamesAdded}</div>
+                  <div className="text-sm text-gray-400">Games Added</div>
+                </div>
+              </div>
+
+              <div className="max-h-64 overflow-y-auto">
+                <h4 className="font-medium mb-2">Source Details:</h4>
+                <div className="space-y-2">
+                  {autoFetchResults.results.map((result: any, index: number) => (
+                    <div key={index} className={`p-2 rounded text-sm ${
+                      result.status === 'success' ? 'bg-green-900/30' :
+                      result.status === 'skipped' ? 'bg-yellow-900/30' :
+                      'bg-red-900/30'
+                    }`}>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">{result.source}</span>
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          result.status === 'success' ? 'bg-green-600' :
+                          result.status === 'skipped' ? 'bg-yellow-600' :
+                          'bg-red-600'
+                        }`}>
+                          {result.status}
+                        </span>
+                      </div>
+                      {result.gamesAdded !== undefined && (
+                        <div className="text-gray-400 mt-1">
+                          Processed: {result.gamesProcessed}, Added: {result.gamesAdded}
+                        </div>
+                      )}
+                      {result.reason && (
+                        <div className="text-gray-400 mt-1">Reason: {result.reason}</div>
+                      )}
+                      {result.error && (
+                        <div className="text-red-400 mt-1">Error: {result.error}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>

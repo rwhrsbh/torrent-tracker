@@ -181,10 +181,20 @@ export default function Home() {
     );
   };
 
+  const isMagnetLink = (uri: string) => {
+    return uri.startsWith('magnet:');
+  };
+
   const openTorrentLink = (magnetUris: string[]) => {
     if (magnetUris.length === 1) {
       if (typeof window !== 'undefined') {
-        window.open(magnetUris[0], '_self');
+        if (isMagnetLink(magnetUris[0])) {
+          // Магнет ссылка - открываем в том же окне
+          window.open(magnetUris[0], '_self');
+        } else {
+          // Обычная ссылка - открываем в новой вкладке
+          window.open(magnetUris[0], '_blank', 'noopener,noreferrer');
+        }
       }
     } else {
       setPendingMagnetLinks(magnetUris);
@@ -437,13 +447,19 @@ export default function Home() {
                   key={index}
                   onClick={() => {
                     if (typeof window !== 'undefined') {
-                      window.open(link, '_self');
+                      if (isMagnetLink(link)) {
+                        // Магнет ссылка - открываем в том же окне
+                        window.open(link, '_self');
+                      } else {
+                        // Обычная ссылка - открываем в новой вкладке
+                        window.open(link, '_blank', 'noopener,noreferrer');
+                      }
                     }
                     setShowSourceModal(false);
                   }}
                   className="btn-premium-outline w-full text-left"
                 >
-                  Source {index + 1}
+                  Source {index + 1} {!isMagnetLink(link) && '(Link)'}
                 </button>
               ))}
             </div>

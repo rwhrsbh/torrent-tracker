@@ -26,6 +26,34 @@ function cleanGameTitle(title: string): string {
   return cleaned;
 }
 
+// Rate limiting для Gemini API (10 запросов в минуту)
+class GeminiRateLimiter {
+  private requestTimes: number[] = [];
+  private readonly maxRequests = 10;
+  private readonly timeWindow = 60000; // 1 минута в миллисекундах
+
+  async waitForRateLimit(): Promise<void> {
+    const now = Date.now();
+    
+    // Удаляем запросы старше 1 минуты
+    this.requestTimes = this.requestTimes.filter(time => now - time < this.timeWindow);
+    
+    // Если достигли лимита, ждем
+    if (this.requestTimes.length >= this.maxRequests) {
+      const oldestRequest = this.requestTimes[0];
+      const waitTime = this.timeWindow - (now - oldestRequest);
+      console.log(`Rate limit reached. Waiting ${Math.ceil(waitTime / 1000)} seconds...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime + 1000)); // +1 секунда для безопасности
+      return this.waitForRateLimit(); // Рекурсивно проверяем снова
+    }
+    
+    // Добавляем текущий запрос
+    this.requestTimes.push(now);
+  }
+}
+
+const geminiRateLimiter = new GeminiRateLimiter();
+
 // Функция для получения жанров через Gemini API с разбивкой на чанки
 export async function detectGenresWithAI(titles: string[]): Promise<{ [title: string]: { genres: string[], cleanTitle?: string, version?: string } }> {
   if (!process.env.GEMINI_API_KEY) {
@@ -37,15 +65,18 @@ export async function detectGenresWithAI(titles: string[]): Promise<{ [title: st
     return result;
   }
 
-  const CHUNK_SIZE = 200;
+  const CHUNK_SIZE = 150; // Уменьшили размер чанка для снижения нагрузки
   const allResults: { [title: string]: { genres: string[], cleanTitle?: string, version?: string } } = {};
 
-  // Разбиваем на чанки по 1000 игр
+  // Разбиваем на чанки по 150 игр
   for (let i = 0; i < titles.length; i += CHUNK_SIZE) {
     const chunk = titles.slice(i, i + CHUNK_SIZE);
     console.log(`Processing chunk ${Math.floor(i / CHUNK_SIZE) + 1}/${Math.ceil(titles.length / CHUNK_SIZE)} (${chunk.length} games)`);
     
     try {
+      // Ждем разрешения на запрос согласно rate limit
+      await geminiRateLimiter.waitForRateLimit();
+      
       const chunkResult = await processGenresChunk(chunk);
       Object.assign(allResults, chunkResult);
     } catch (error) {
@@ -56,9 +87,10 @@ export async function detectGenresWithAI(titles: string[]): Promise<{ [title: st
       });
     }
 
-    // Небольшая пауза между запросами чтобы не перегружать API
+    // Увеличенная пауза между запросами для соблюдения rate limit
     if (i + CHUNK_SIZE < titles.length) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Waiting 3 seconds before next chunk...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
   }
 
@@ -129,6 +161,11 @@ ${titles.map((title, index) => `${index + 1}. ${title}`).join('\n')}`;
   );
 
   if (!response.ok) {
+    if (response.status === 429) {
+      console.log('Rate limit exceeded (429), waiting 70 seconds...');
+      await new Promise(resolve => setTimeout(resolve, 70000)); // Ждем 70 секунд
+      return processGenresChunk(titles); // Повторяем запрос
+    }
     throw new Error(`Gemini API error: ${response.status}`);
   }
 

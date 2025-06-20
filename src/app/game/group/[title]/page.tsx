@@ -150,10 +150,20 @@ export default function GroupedGamePage() {
     }
   };
 
+  const isMagnetLink = (uri: string) => {
+    return uri.startsWith('magnet:');
+  };
+
   const openTorrentLink = (magnetUris: string[]) => {
     if (magnetUris.length === 1) {
       if (typeof window !== 'undefined') {
-        window.open(magnetUris[0], '_self');
+        if (isMagnetLink(magnetUris[0])) {
+          // Магнет ссылка - открываем в том же окне
+          window.open(magnetUris[0], '_self');
+        } else {
+          // Обычная ссылка - открываем в новой вкладке
+          window.open(magnetUris[0], '_blank', 'noopener,noreferrer');
+        }
       }
     }
   };
