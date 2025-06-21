@@ -22,7 +22,7 @@ export default function BeeSwarm() {
   // Инициализация роя пчел
   useEffect(() => {
     const initialBees: Bee[] = [];
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 6; i++) {
       initialBees.push({
         id: i,
         x: Math.random() * window.innerWidth,
@@ -38,10 +38,15 @@ export default function BeeSwarm() {
     setBees(initialBees);
   }, []);
 
-  // Отслеживание движения мыши
+  // Отслеживание движения мыши с throttling
   useEffect(() => {
+    let lastTime = 0;
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
+      const now = Date.now();
+      if (now - lastTime > 50) { // Обновляем только каждые 50мс
+        setMousePos({ x: e.clientX, y: e.clientY });
+        lastTime = now;
+      }
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -120,23 +125,6 @@ export default function BeeSwarm() {
       <style jsx>{`
         .bee-sprite {
           font-size: 16px;
-          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-          animation: bee-flutter 0.3s ease-in-out infinite alternate;
-        }
-        
-        @keyframes bee-flutter {
-          0% { transform: translateY(0px) rotate(-2deg); }
-          100% { transform: translateY(-1px) rotate(2deg); }
-        }
-        
-        .bee-sprite:hover {
-          animation: bee-buzz 0.1s ease-in-out infinite;
-        }
-        
-        @keyframes bee-buzz {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-0.5px); }
-          75% { transform: translateX(0.5px); }
         }
       `}</style>
     </div>

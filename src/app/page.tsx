@@ -232,7 +232,7 @@ export default function Home() {
       <BeeCursor />
       <AdBlockDetector />
       <DevToolsDetector />
-      <header className="border-b border-gray-800 bg-black/90 backdrop-blur-sm sticky top-0 z-10">
+      <header className="border-b border-gray-800 bg-black/90 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-transparent">

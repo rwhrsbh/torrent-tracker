@@ -21,44 +21,40 @@
 /* Фон с пчелиными сотами */
 body {
   background-color: rgba(26, 26, 26, 0.6);
-  background-image: 
-    radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
-    linear-gradient(60deg, rgba(255, 215, 0, 0.05) 25%, transparent 25%, transparent 75%, rgba(255, 215, 0, 0.05) 75%), 
-    linear-gradient(120deg, rgba(255, 215, 0, 0.05) 25%, transparent 25%, transparent 75%, rgba(255, 215, 0, 0.05) 75%);
-  background-size: 100px 100px, 60px 60px, 60px 60px;
-  background-position: 0 0, 0 0, 30px 30px;
   color: var(--wax-white);
   font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
 }
 
-/* Анимация пчелиных сот */
-@keyframes honeycomb-pulse {
-  0%, 100% { 
-    opacity: 0.05;
-    transform: scale(1);
-  }
-  50% { 
-    opacity: 0.15;
-    transform: scale(1.02);
+html {
+  overflow-x: hidden;
+}
+
+/* Предотвращаем горизонтальный скролл */
+* {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Оптимизация производительности */
+* {
+  will-change: auto;
+}
+
+.card-premium, .btn-premium, .btn-premium-outline {
+  will-change: box-shadow, border-color;
+}
+
+/* Отключаем анимации на слабых устройствах */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    linear-gradient(60deg, rgba(255, 215, 0, 0.03) 25%, transparent 25%, transparent 75%, rgba(255, 215, 0, 0.03) 75%), 
-    linear-gradient(120deg, rgba(255, 215, 0, 0.03) 25%, transparent 25%, transparent 75%, rgba(255, 215, 0, 0.03) 75%);
-  background-size: 80px 80px, 80px 80px;
-  background-position: 0 0, 40px 40px;
-  animation: honeycomb-pulse 4s ease-in-out infinite;
-  pointer-events: none;
-  z-index: -1;
-}
+/* Убираем тяжелые фоновые анимации */
 
 /* Стилизация карточек под соты */
 .card-premium {
@@ -129,12 +125,10 @@ body::before {
   color: rgba(255, 248, 220, 0.5);
 }
 
-/* Анимация жужжания */
+/* Упрощенная анимация жужжания */
 @keyframes buzz {
-  0%, 100% { transform: translateX(0) rotate(0deg); }
-  25% { transform: translateX(1px) rotate(1deg); }
-  50% { transform: translateX(-1px) rotate(-1deg); }
-  75% { transform: translateX(1px) rotate(1deg); }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }
 
 /* Пчелиные жанры */
@@ -152,8 +146,8 @@ body::before {
 }
 
 .genre-tag:hover {
-  animation: buzz 0.5s ease-in-out;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.6);
+  animation: buzz 0.3s ease-in-out;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
 }
 
 /* Стилизация хедера */
@@ -163,12 +157,11 @@ body::before {
   position: relative;
 }
 
-/* Прогресс-бар в виде наполнения медом */
+/* Упрощенный прогресс-бар */
 .progress-honey {
   background: rgba(42, 42, 42, 0.8);
   border-radius: 20px;
   overflow: hidden;
-  position: relative;
   border: 2px solid rgba(255, 215, 0, 0.3);
 }
 
@@ -177,38 +170,16 @@ body::before {
   height: 100%;
   border-radius: 18px;
   transition: width 0.3s ease;
-  position: relative;
-  overflow: hidden;
 }
 
-.progress-honey-fill::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: 
-    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.3) 2px, transparent 2px),
-    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.2) 1px, transparent 1px);
-  background-size: 20px 20px, 15px 15px;
-  animation: honey-flow 3s linear infinite;
-}
-
-@keyframes honey-flow {
-  0% { background-position: 0 0, 0 0; }
-  100% { background-position: 20px 20px, 15px 15px; }
-}
-
-/* Пульсация для лайков */
+/* Упрощенные лайк-кнопки */
 .like-button {
   color: var(--honey-gold);
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease;
 }
 
 .like-button:hover {
-  animation: buzz 0.6s ease-in-out;
-  text-shadow: 0 0 10px var(--honey-gold);
+  transform: scale(1.05);
 }
 
 /* Скроллбар в пчелином стиле */
